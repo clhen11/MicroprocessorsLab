@@ -12,7 +12,7 @@ start:
 	movwf	TRISB, A	    ; Port C all outputs
 	bra 	test
 loop:
-	movff 	0x06, PORTB
+	movff 	0x06, PORTC
 	incf 	0x06, W, A
 test:
 	movwf	0x06, A	    ; Test for end of loop condition
