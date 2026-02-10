@@ -59,12 +59,13 @@ loop:
 	movff	TABLAT, POSTINC0	; move read data from TABLAT to (FSR0), increment FSR0
 	movff	TABLAT, PORTC	   ; move fsr0 to portc
 	movff	PORTD, delaycounter
-;	bz SetMin
-;	bra Continue
-;	SetMin:
-;	    movlw 0x01
-;	    movwf delaycounter, A
-;	Continue:
+	movf   PORTD, W, A
+	bz SetMin
+	bra Continue
+	SetMin:
+	    movlw 0x01
+	    movwf delaycounter, A
+	Continue:
 	call	DelayByPortD
 	decfsz	counter, A	; count down to zero
 	bra	loop		; keep going until finished
