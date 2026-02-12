@@ -7,43 +7,60 @@ main:
 	goto	start
 
 	org	0x100		    ; Main code starts here
-	
-bigdelay:
-	movlw   0x00 ; W=0
-dloop: 
-	decf    0x11, f, A ; no carry when 0x00 -> 0xff
-	subwfb  0x10, f, A ; no carry when 0x00 -> 0xff
-	bc	    dloop ; if carry, then loop again
-	return	; carry not set so return
 start:
-	clrf	0x06, A	    ; Counter = 0
+	clrf	0x06, A	        ; Counter = 0
+	
 	movlw 	0x00
-	movwf	TRISD, A	; Port D all outputs
-	movwf	TRISC, A	; Port C all outputs
+	movwf	TRISC, A	    ; PORTC all outputs (DAC data bus)
+	movwf	TRISD, A	    ; PORTD all outputs (WR* on RD0)
+
+	bsf	    PORTD, 0	    ; WR* HIGH (inactive)
+
 	bra 	test_up
 
+
 count_up:
-	movff 	0x06, PORTC	; Output counter to PORTC
-	incf	0x06, F, A	; Increment counter (store back in file!)
+	movff 	0x06, PORTC	; Put counter on DAC data bus
+	
+	bcf	    PORTD, 0	    ; WR* LOW (start write)
+	call	delay
+	bsf	    PORTD, 0	    ; WR* HIGH (latch on rising edge)
+
+	call	delay
+	
+	incf	0x06, F, A	; Increment counter
 	
 test_up:
 	movlw   0x63		; 99 decimal
-	cpfseq 	0x06, A		; Skip next if 0x06 == 0x63
-	
-	bra 	count_up	; Not 99 yet ? keep counting up
-	bra 	count_down	; Reached 99 ? start counting down
+	cpfseq 	0x06, A
+	bra 	count_up
+	bra 	count_down
 
 
 count_down:
-	movff 	0x06, PORTC	; Output counter
-	decf 	0x06, F, A	; Decrement counter
+	movff 	0x06, PORTC
+	
+	bcf	    PORTD, 0	    ; WR* LOW
+	call	delay
+	bsf	    PORTD, 0	    ; WR* HIGH (latch)
+
+	call	delay
+	
+	decf 	0x06, F, A
 	
 test_down:
 	movlw   0x00
-	cpfseq 	0x06, A		; Skip if counter == 0
-	bra 	count_down	; Not zero yet ? keep counting down
-	goto 	start		; Reached 0 ? restart whole cycle
+	cpfseq 	0x06, A
+	bra 	count_down
+	goto 	start
 
+
+delay:
+	movlw	0xFF
+	movwf	0x07, A
+delay_loop:
+	decfsz	0x07, F, A
+	bra	    delay_loop
+	return
 
 	end	main
-
