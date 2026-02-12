@@ -1,73 +1,62 @@
-	#include <xc.inc>
-	
-psect	code, abs
-main:
-	org 0x0
-	goto	setup
-	
-	org 0x100		    ; Main code starts here at address 0x100
+#include <xc.inc>
 
-	; ******* Programme FLASH read Setup Code ****  
-setup:	
-	bcf	CFGS	; point to Flash program memory  
-	bsf	EEPGD 	; access Flash program memory
-	goto	start
-	; ******* My data and where to put it in RAM *
-myTable:
-	db	1, 32, 4, 128, 8, 64, 2, 16
-	myArray EQU 0x400	; Address in RAM for data
-	counter EQU 0x12	; Address of counter variable
-	align	2		; ensure alignment of subsequent instructions
-	delaycounter EQU 0x13
-	; ******* Main programme *********************
-bigdelay:
-	movlw   0x00 ; W=0
-dloop: 
-	decf    0x11, f, A ; no carry when 0x00 -> 0xff
-	subwfb  0x10, f, A ; no carry when 0x00 -> 0xff
-	bc	    dloop ; if carry, then loop again
-	return	; carry not set so return
-DelayByPortD:
-    movlw high(0xFFFF)
-    movwf 0x10, A
-    movlw low(0xFFFF)
-    movwf 0x11, A
-    call bigdelay
-    decfsz delaycounter, A
-    bra DelayByPortD
-    return
-start:	
-	movlw	0xFF
-	movwf	TRISD, A    ; Set portD to input
-	movlw	0x0
-	movwf	TRISC, A	; Set portC to output
-	lfsr	0, myArray	; Load FSR0 with address in RAM	
-	movlw	low highword(myTable)	; address of data in PM
-	movwf	TBLPTRU, A	; load upper bits to TBLPTRU
-	movlw	high(myTable)	; address of data in PM
-	movwf	TBLPTRH, A	; load high byte to TBLPTRH
-	movlw	low(myTable)	; address of data in PM
-	movwf	TBLPTRL, A	; load low byte to TBLPTRL
-	movlw	8		; 9 bytes to read
-	movwf 	counter, A	; our counter register
+psect code, abs
+
+main:
+    org 0x0
+    goto start
+
+    org 0x100            ; Main code starts here at address 0x100
+start:
+    movlw 0x0            ; Hello my name is George! This is a push test! HELLO GEORGE 
+    movwf TRISD, A       ; Port D all OUTPUTS
+
+    movlw 0x0
+    movwf TRISJ, A       ; Port J all outputs
+    movlw 0x01
+    movwf PORTD, A
+
+    movlw 0x00
+    movwf 0x06, A
+
+    bra test
+
 loop:
-        movlw	high(0xFFFF) ; load 16bit number into
-	movwf	0x10, A ; FR 0x10
-	movlw	low(0xFFFF)
-	movwf	0x11, A ; and FR 0x11
-	tblrd*+			; move one byte from PM to TABLAT, increment TBLPRT
-	movff	TABLAT, POSTINC0	; move read data from TABLAT to (FSR0), increment FSR0
-	movff	TABLAT, PORTC	   ; move fsr0 to portc
-	movff	PORTD, delaycounter
-;	bz SetMin
-;	bra Continue
-;	SetMin:
-;	    movlw 0x01
-;	    movwf delaycounter, A
-;	Continue:
-	call	DelayByPortD
-	decfsz	counter, A	; count down to zero
-	bra	loop		; keep going until finished
-	goto	0
-	
-	end	main
+    movlw low highword(0x0000FF)
+    movwf 0x12, A
+    movlw high(0x0000FF)
+    movlw 0xFF
+    movwf 0x11, A
+    movlw low(0x0000FF)
+    movwf 0x10, A
+    call bigDelay
+
+    movff 0x06, PORTJ    ; Move value from register 6 to Port J
+
+    movlw 0x00
+    movwf PORTD, A
+    nop
+    nop
+    movlw 0xFF
+    movwf PORTD, A
+
+    incf 0x06, W, A      ; Increment value of register 6, and store in W
+
+test:
+    movwf 0x06, A        ; Test for end of loop condition
+    movlw 0xFF
+    cpfsgt 0x06, A       ; Compares register 6 to what is stored in W
+    bra loop             ; Not yet finished goto start of loop again
+
+    goto 0x0             ; Re-run program from start
+
+bigDelay:
+    movlw 0x00
+DLoop:
+    decf 0x10, f, A
+    subwfb 0x11, f, A
+    subwfb 0x12, f, A
+    bc DLoop
+    return
+    
+end main
