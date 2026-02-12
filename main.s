@@ -7,6 +7,14 @@ main:
 	goto	start
 
 	org	0x100		    ; Main code starts here
+	
+bigdelay:
+	movlw   0x00 ; W=0
+dloop: 
+	decf    0x11, f, A ; no carry when 0x00 -> 0xff
+	subwfb  0x10, f, A ; no carry when 0x00 -> 0xff
+	bc	    dloop ; if carry, then loop again
+	return	; carry not set so return
 start:
 	clrf	0x06, A	    ; Counter = 0
 	movlw 	0x00
@@ -21,6 +29,7 @@ count_up:
 test_up:
 	movlw   0x63		; 99 decimal
 	cpfseq 	0x06, A		; Skip next if 0x06 == 0x63
+	
 	bra 	count_up	; Not 99 yet ? keep counting up
 	bra 	count_down	; Reached 99 ? start counting down
 
@@ -37,3 +46,4 @@ test_down:
 
 
 	end	main
+
