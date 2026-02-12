@@ -18,7 +18,6 @@ start:
 
 	bra 	test_up
 
-
 count_up:
 	movff 	0x06, PORTC	; Put counter on DAC data bus
 	
@@ -64,3 +63,4 @@ delay_loop:
 	return
 
 	end	main
+
