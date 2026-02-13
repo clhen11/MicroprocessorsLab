@@ -85,7 +85,7 @@
 ; CONFIG7H
   CONFIG  EBRTB = OFF           ; Table Read Protect Boot (Disabled)
 
-  end
+;  end
 ; PIC18F87K22 Configuration Bit Settings
 
 ; Assembly source line config statements

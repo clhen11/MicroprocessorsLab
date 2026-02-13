@@ -55,7 +55,7 @@ test_down:
 
 
 delay:
-	movlw	0xFF
+	movlw	0x01
 	movwf	0x07, A
 delay_loop:
 	decfsz	0x07, F, A
