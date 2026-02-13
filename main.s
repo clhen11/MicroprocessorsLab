@@ -25,7 +25,7 @@ loop:
     movlw low highword(0x0000FF)
     movwf 0x12, A
     movlw high(0x0000FF)
-    movlw 0xFF
+    movlw 0x07
     movwf 0x11, A
     movlw low(0x0000FF)
     movwf 0x10, A
@@ -37,7 +37,7 @@ loop:
     movwf PORTD, A
     nop
     nop
-    movlw 0xFF
+    movlw 0x63
     movwf PORTD, A
 
     incf 0x06, W, A      ; Increment value of register 6, and store in W
