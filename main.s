@@ -1,7 +1,7 @@
 #include <xc.inc>
 
 extrn	UART_Setup, UART_Transmit_Message  ; external subroutines
-extrn	LCD_Setup, LCD_Write_Message
+extrn	LCD_Setup, LCD_Write_Message, LCD_Send_Byte_I, LCD_delay_x4us, LCD_Clear
 	
 psect	udata_acs   ; reserve data space in access ram
 counter:    ds 1    ; reserve one byte for a counter variable
@@ -13,9 +13,9 @@ myArray:    ds 0x80 ; reserve 128 bytes for message data
 psect	data    
 	; ******* myTable, data in programme memory, and its length *****
 myTable:
-	db	'H','e','l','l','o',' ','W','o','r','l','d','!',0x0a
+	db  '1','2','3','4','5','6','7','8','9','0','1','2','3','4','5','6','7','8','9','0',0x0a
 					; message, plus carriage return
-	myTable_l   EQU	13	; length of data
+	myTable_l   EQU	22	; length of data
 	align	2
     
 psect	code, abs	
@@ -27,6 +27,7 @@ setup:	bcf	CFGS	; point to Flash program memory
 	bsf	EEPGD 	; access Flash program memory
 	call	UART_Setup	; setup UART
 	call	LCD_Setup	; setup UART
+	bsf TRISJ, 0		; set RJ0 to input
 	goto	start
 	
 	; ******* Main programme ****************************************
@@ -48,12 +49,29 @@ loop: 	tblrd*+			; one byte from PM to TABLAT, increment TBLPRT
 	lfsr	2, myArray
 	call	UART_Transmit_Message
 
+	movlw	0xC0		; set to line 2 address 0x40 + 0x80 from message data
+	call	LCD_Send_Byte_I ; 
+	
+	movlw	10
+	call	LCD_delay_x4us	; delay needed so first character is still seen
+	
 	movlw	myTable_l	; output message to LCD
 	addlw	0xff		; don't send the final carriage return to LCD
 	lfsr	2, myArray
 	call	LCD_Write_Message
 
-	goto	$		; goto current line in code
+	;goto	$		; goto current line in code
+	loop_until_J_1:
+	    btfss   PORTJ, 0       ; Skip next if RJ0 = 0
+	    bra     loop_until_J_1      ; If not pressed, keep checking
+
+	    call    LCD_Clear      ; If pressed, clear LCD
+
+	Wait_Release:
+	    btfsc   PORTJ, 0       ; Wait until button released
+	    bra     Wait_Release
+
+	    bra     loop_until_J_1
 
 	; a delay subroutine if you need one, times around loop in delay_count
 delay:	decfsz	delay_count, A	; decrement until zero
