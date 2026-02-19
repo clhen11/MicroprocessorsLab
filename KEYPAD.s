@@ -162,11 +162,12 @@ KeyPad_read:
     bra	    KeyPad_C3_R2
     btfss   PORTE, 3, A
     bra	    KeyPad_C3_R3
-
+    
 KeyPad_NoKey:
     movlw   0xF0
     movwf   LATE, A
-    movlw   0x00		; no key pressed, Z flag set
+    movlw   0x00		; no key pressed
+    iorlw   0x00		; movlw does NOT set Z! iorlw 0 with W=0 sets Z flag
     return
 
 ; Row 0: 1 2 3 F
