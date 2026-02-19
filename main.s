@@ -2,7 +2,7 @@
 
 
 extrn	UART_Setup, UART_Transmit_Message  ; external subroutines
-extrn	LCD_Setup, LCD_Write_Message, LCD_Send_Byte_I, LCD_delay_x4us, LCD_Clear
+extrn	LCD_Setup, LCD_Write_Message, LCD_Send_Byte_I, LCD_Send_Byte_D, LCD_delay_x4us, LCD_Clear
 extrn	KeyPad_init, KeyPad_read
 	
 psect	udata_acs   ; reserve data space in access ram
@@ -30,132 +30,82 @@ setup:	bcf	CFGS	; point to Flash program memory
 	call	UART_Setup	; setup UART
 	call	LCD_Setup	; setup UART
 	call	KeyPad_init	; set up keypad
-	bsf TRISJ, 0		; set RJ0 to input
+	bsf TRISJ, 0, A		; set RJ0 to input
 	
 	goto	start
 	
-	; ******* Main programme ****************************************
-start: 	lfsr	0, myArray	; Load FSR0 with address in RAM	
-	movlw	low highword(myTable)	; address of data in PM
-	movwf	TBLPTRU, A		; load upper bits to TBLPTRU
-	movlw	high(myTable)	; address of data in PM
-	movwf	TBLPTRH, A		; load high byte to TBLPTRH
-	movlw	low(myTable)	; address of data in PM
-	movwf	TBLPTRL, A		; load low byte to TBLPTRL
-	movlw	myTable_l	; bytes to read
-	movwf 	counter, A		; our counter register
-	
-	call	KeyPad_read
-	
-	
-loop: 	tblrd*+			; one byte from PM to TABLAT, increment TBLPRT
-	movff	TABLAT, POSTINC0; move data from TABLAT to (FSR0), inc FSR0	
-	decfsz	counter, A		; count down to zero
-	bra	loop		; keep going until finished
-		
-	movlw	myTable_l	; output message to UART
-	lfsr	2, myArray
-	call	UART_Transmit_Message
+	; ******* Original Main programme (commented out) ****************************************
+;	start: 	lfsr	0, myArray	; Load FSR0 with address in RAM	
+;	movlw	low highword(myTable)	; address of data in PM
+;	movwf	TBLPTRU, A		; load upper bits to TBLPTRU
+;	movlw	high(myTable)	; address of data in PM
+;	movwf	TBLPTRH, A		; load high byte to TBLPTRH
+;	movlw	low(myTable)	; address of data in PM
+;	movwf	TBLPTRL, A		; load low byte to TBLPTRL
+;	movlw	myTable_l	; bytes to read
+;	movwf 	counter, A		; our counter register
+;	
+;	
+;	wait_for_keypad:
+;	call	KeyPad_read
+;	bz	wait_for_keypad
+;	
+;	
+;	loop: 	tblrd*+			; one byte from PM to TABLAT, increment TBLPRT
+;	movff	TABLAT, POSTINC0; move data from TABLAT to (FSR0), inc FSR0	
+;	decfsz	counter, A		; count down to zero
+;	bra	loop		; keep going until finished
+;		
+;	movlw	myTable_l	; output message to UART
+;	lfsr	2, myArray
+;	call	UART_Transmit_Message
+;
+;	movlw	0xC0		; set to line 2 address 0x40 + 0x80 from message data
+;	call	LCD_Send_Byte_I ; 
+;	
+;	movlw	10
+;	call	LCD_delay_x4us	; delay needed so first character is still seen
+;	
+;	movlw	myTable_l	; output message to LCD
+;	addlw	0xff		; don't send the final carriage return to LCD
+;	lfsr	2, myArray
+;	call	LCD_Write_Message
+;
+;	;goto	$		; goto current line in code
+;	loop_until_J_1:
+;	    btfss   PORTJ, 0, A	        ; Skip next if RJ0 = 0
+;	    bra     loop_until_J_1      ; If not pressed, keep checking
+;
+;	    call    LCD_Clear      ; If pressed, clear LCD
+;
+;	Wait_Release:
+;	    btfsc   PORTJ, 0 , A      ; Wait until button released
+;	    bra     Wait_Release
+;
+;	    bra     loop_until_J_1
+	; ******* End original Main programme ****************************************
 
-	movlw	0xC0		; set to line 2 address 0x40 + 0x80 from message data
-	call	LCD_Send_Byte_I ; 
-	
+	; ******* New Main programme - Keypad to LCD ****************************************
+start:
+wait_for_keypad:
+	call	KeyPad_read	; scan keypad, ASCII in W (0 if none)
+	bz	wait_for_keypad	; no key pressed, keep scanning
+
+	; W now holds the ASCII character of the pressed key
+	call	LCD_Send_Byte_D	; display key character on LCD
+
 	movlw	10
-	call	LCD_delay_x4us	; delay needed so first character is still seen
-	
-	movlw	myTable_l	; output message to LCD
-	addlw	0xff		; don't send the final carriage return to LCD
-	lfsr	2, myArray
-	call	LCD_Write_Message
+	call	LCD_delay_x4us	; small delay for LCD
 
-	;goto	$		; goto current line in code
-	loop_until_J_1:
-	    btfss   PORTJ, 0       ; Skip next if RJ0 = 0
-	    bra     loop_until_J_1      ; If not pressed, keep checking
+wait_for_release:
+	call	KeyPad_read	; keep scanning
+	bnz	wait_for_release	; key still held, wait
 
-	    call    LCD_Clear      ; If pressed, clear LCD
-
-	Wait_Release:
-	    btfsc   PORTJ, 0       ; Wait until button released
-	    bra     Wait_Release
-
-	    bra     loop_until_J_1
+	bra	wait_for_keypad	; key released, go scan again
 
 	; a delay subroutine if you need one, times around loop in delay_count
 delay:	decfsz	delay_count, A	; decrement until zero
 	bra	delay
 	return
-	
-
-
-=======
-extrn	UART_Setup, UART_Transmit_Message  ; external uart subroutines
-extrn	LCD_Setup, LCD_Write_Message, LCD_Write_Hex ; external LCD subroutines
-extrn	ADC_Setup, ADC_Read		   ; external ADC subroutines
-	
-psect	udata_acs   ; reserve data space in access ram
-counter:    ds 1    ; reserve one byte for a counter variable
-delay_count:ds 1    ; reserve one byte for counter in the delay routine
-    
-psect	udata_bank4 ; reserve data anywhere in RAM (here at 0x400)
-myArray:    ds 0x80 ; reserve 128 bytes for message data
-
-psect	data    
-	; ******* myTable, data in programme memory, and its length *****
-myTable:
-	db	'H','e','l','l','o',' ','W','o','r','l','d','!',0x0a
-					; message, plus carriage return
-	myTable_l   EQU	13	; length of data
-	align	2
-    
-psect	code, abs	
-rst: 	org 0x0
- 	goto	setup
-
-	; ******* Programme FLASH read Setup Code ***********************
-setup:	bcf	CFGS	; point to Flash program memory  
-	bsf	EEPGD 	; access Flash program memory
-	call	UART_Setup	; setup UART
-	call	LCD_Setup	; setup UART
-	call	ADC_Setup	; setup ADC
-	goto	start
-	
-	; ******* Main programme ****************************************
-start: 	lfsr	0, myArray	; Load FSR0 with address in RAM	
-	movlw	low highword(myTable)	; address of data in PM
-	movwf	TBLPTRU, A		; load upper bits to TBLPTRU
-	movlw	high(myTable)	; address of data in PM
-	movwf	TBLPTRH, A		; load high byte to TBLPTRH
-	movlw	low(myTable)	; address of data in PM
-	movwf	TBLPTRL, A		; load low byte to TBLPTRL
-	movlw	myTable_l	; bytes to read
-	movwf 	counter, A		; our counter register
-loop: 	tblrd*+			; one byte from PM to TABLAT, increment TBLPRT
-	movff	TABLAT, POSTINC0; move data from TABLAT to (FSR0), inc FSR0	
-	decfsz	counter, A		; count down to zero
-	bra	loop		; keep going until finished
-		
-	movlw	myTable_l	; output message to UART
-	lfsr	2, myArray
-	call	UART_Transmit_Message
-
-	movlw	myTable_l-1	; output message to LCD
-				; don't send the final carriage return to LCD
-	lfsr	2, myArray
-	call	LCD_Write_Message
-	
-measure_loop:
-	call	ADC_Read
-	movf	ADRESH, W, A
-	call	LCD_Write_Hex
-	movf	ADRESL, W, A
-	call	LCD_Write_Hex
-	goto	measure_loop		; goto current line in code
-	
-	; a delay subroutine if you need one, times around loop in delay_count
-delay:	decfsz	delay_count, A	; decrement until zero
-	bra	delay
-	return
-
 
 	end	rst
