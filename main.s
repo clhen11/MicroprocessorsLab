@@ -34,60 +34,8 @@ setup:	bcf	CFGS	; point to Flash program memory
 	
 	goto	start
 	
-	; ******* Original Main programme  ****************************************
-;	start: 	lfsr	0, myArray	; Load FSR0 with address in RAM	
-;	movlw	low highword(myTable)	; address of data in PM
-;	movwf	TBLPTRU, A		; load upper bits to TBLPTRU
-;	movlw	high(myTable)	; address of data in PM
-;	movwf	TBLPTRH, A		; load high byte to TBLPTRH
-;	movlw	low(myTable)	; address of data in PM
-;	movwf	TBLPTRL, A		; load low byte to TBLPTRL
-;	movlw	myTable_l	; bytes to read
-;	movwf 	counter, A		; our counter register
-;	
-;	
-;	wait_for_keypad:
-;	call	KeyPad_read
-;	bz	wait_for_keypad
-;	
-;	
-;	loop: 	tblrd*+			; one byte from PM to TABLAT, increment TBLPRT
-;	movff	TABLAT, POSTINC0; move data from TABLAT to (FSR0), inc FSR0	
-;	decfsz	counter, A		; count down to zero
-;	bra	loop		; keep going until finished
-;		
-;	movlw	myTable_l	; output message to UART
-;	lfsr	2, myArray
-;	call	UART_Transmit_Message
-;
-;	movlw	0xC0		; set to line 2 address 0x40 + 0x80 from message data
-;	call	LCD_Send_Byte_I ; 
-;	
-;	movlw	10
-;	call	LCD_delay_x4us	; delay needed so first character is still seen
-;	
-;	movlw	myTable_l	; output message to LCD
-;	addlw	0xff		; don't send the final carriage return to LCD
-;	lfsr	2, myArray
-;	call	LCD_Write_Message
-;
-;	;goto	$		; goto current line in code
-;	loop_until_J_1:
-;	    btfss   PORTJ, 0, A	        ; Skip next if RJ0 = 0
-;	    bra     loop_until_J_1      ; If not pressed, keep checking
-;
-;	    call    LCD_Clear      ; If pressed, clear LCD
-;
-;	Wait_Release:
-;	    btfsc   PORTJ, 0 , A      ; Wait until button released
-;	    bra     Wait_Release
-;
-;	    bra     loop_until_J_1
-	; ******* End original Main programme ****************************************
-
-	; ******* New Main programme ****************************************
 start:
-    ; Set LCD cursor to line 1, position 0 FIRST
+    ; Set LCD cursor to line 1, position 0 
     movlw   0x80            ; line 1, position 0 (0x80 = DDRAM address 0x00)
     call    LCD_Send_Byte_I ; send as instruction
     movlw   10

@@ -18,63 +18,10 @@ KeyPad_Setup:
 					; must set TRISC6 to 1
     return
     
-; ---- Original KeyPad_init ----
-;KeyPad_init:
-;    movlw   0x0F	; 0-3 input, 4-7 outputs
-;    movwf   TRISE, A
-;    movlw   0xF0
-;    movwf    PORTE, A
-;    movlw   0x0
-;    movwf   TRISD, A
-;    clrf    PORTD
-;    movlb   0x02
-;    bsf	    REPU
-;
-;
-;    clrf    LATE
-;
-;    movf    PORTE, W
-;
-;
-;
-;    return
-; ---- End original KeyPad_init ----
-    
-; ---- Original KeyPad_read (commented out) ----
-;KeyPad_read:
-;    btfss   PORTE, 0
-;    bra	    PORTD_output_0
-;    btfsc   PORTE, 1
-;    bra	    PORTD_output_1
-;    btfsc   PORTE, 2
-;    bra	    PORTD_output_2
-;    btfsc   PORTE, 3
-;    bra	    PORTD_output_3
-;    nop
-;
-;PORTD_output_0:
-;    clrf    PORTD
-;    bsf	    PORTD, 0
-;    return
-;PORTD_output_1:
-;    clrf    PORTD
-;    bsf	    PORTD, 1
-;    return
-;PORTD_output_2:
-;    clrf    PORTD
-;    bsf	    PORTD, 2
-;    return
-;PORTD_output_3:
-;    clrf    PORTD
-;    bsf	    PORTD, 3
-;    return
-; ---- End original KeyPad_read ----
-    
-
-
     
 KeyPad_Transmit_Message:	    ; Message stored at FSR2, length stored in W
     movwf   KeyPad_counter, A
+    
 KeyPad_Loop_message:
     movf    POSTINC2, W, A
     call    KeyPad_Transmit_Byte
@@ -88,7 +35,6 @@ KeyPad_Transmit_Byte:	    ; Transmits byte stored in W
     movwf   TXREG1, A
     return
 
-; ======== New 4x4 keypad code ========
 
 KeyPad_init:
     movlw   0x0F	; RE0-RE3 inputs (rows), RE4-RE7 outputs (columns)
@@ -108,9 +54,6 @@ KeyPad_init:
 
 
 KeyPad_read:
-    ; 4x4 keypad scan on PORTE: RE0-RE3 rows (inputs), RE4-RE7 columns (outputs)
-    ; Returns ASCII key in W. If no key pressed, W = 0 and Z flag set.
-
     ; Column 0 (RE4 low) -> keys: 1, 4, 7, A
     movlw   0xE0
     movwf   LATE, A
