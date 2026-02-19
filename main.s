@@ -2,6 +2,7 @@
 
 extrn	UART_Setup, UART_Transmit_Message  ; external subroutines
 extrn	LCD_Setup, LCD_Write_Message, LCD_Send_Byte_I, LCD_delay_x4us, LCD_Clear
+extrn	KeyPad_init, KeyPad_read
 	
 psect	udata_acs   ; reserve data space in access ram
 counter:    ds 1    ; reserve one byte for a counter variable
@@ -27,7 +28,9 @@ setup:	bcf	CFGS	; point to Flash program memory
 	bsf	EEPGD 	; access Flash program memory
 	call	UART_Setup	; setup UART
 	call	LCD_Setup	; setup UART
+	call	KeyPad_init	; set up keypad
 	bsf TRISJ, 0		; set RJ0 to input
+	
 	goto	start
 	
 	; ******* Main programme ****************************************
@@ -40,6 +43,10 @@ start: 	lfsr	0, myArray	; Load FSR0 with address in RAM
 	movwf	TBLPTRL, A		; load low byte to TBLPTRL
 	movlw	myTable_l	; bytes to read
 	movwf 	counter, A		; our counter register
+	
+	call	KeyPad_read
+	
+	
 loop: 	tblrd*+			; one byte from PM to TABLAT, increment TBLPRT
 	movff	TABLAT, POSTINC0; move data from TABLAT to (FSR0), inc FSR0	
 	decfsz	counter, A		; count down to zero
@@ -77,5 +84,8 @@ loop: 	tblrd*+			; one byte from PM to TABLAT, increment TBLPRT
 delay:	decfsz	delay_count, A	; decrement until zero
 	bra	delay
 	return
+	
+
+
 
 	end	rst
