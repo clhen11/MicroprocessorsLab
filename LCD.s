@@ -1,8 +1,6 @@
 #include <xc.inc>
 
-; Original global (commented out):
 ; global  LCD_Setup, LCD_Write_Message, LCD_Send_Byte_I, LCD_delay_x4us, LCD_Clear
-; New global with LCD_Send_Byte_D added:
 global  LCD_Setup, LCD_Write_Message, LCD_Send_Byte_I, LCD_Send_Byte_D, LCD_delay_x4us, LCD_Clear
 
 psect	udata_acs   ; named variables in access ram

@@ -18,7 +18,7 @@ KeyPad_Setup:
 					; must set TRISC6 to 1
     return
     
-; ---- Original KeyPad_init (commented out) ----
+; ---- Original KeyPad_init ----
 ;KeyPad_init:
 ;    movlw   0x0F	; 0-3 input, 4-7 outputs
 ;    movwf   TRISE, A
@@ -88,7 +88,7 @@ KeyPad_Transmit_Byte:	    ; Transmits byte stored in W
     movwf   TXREG1, A
     return
 
-; ======== New 4x4 keypad code (mapping: 123F / 456E / 789D / A0BC) ========
+; ======== New 4x4 keypad code ========
 
 KeyPad_init:
     movlw   0x0F	; RE0-RE3 inputs (rows), RE4-RE7 outputs (columns)

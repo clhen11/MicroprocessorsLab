@@ -34,7 +34,7 @@ setup:	bcf	CFGS	; point to Flash program memory
 	
 	goto	start
 	
-	; ******* Original Main programme (commented out) ****************************************
+	; ******* Original Main programme  ****************************************
 ;	start: 	lfsr	0, myArray	; Load FSR0 with address in RAM	
 ;	movlw	low highword(myTable)	; address of data in PM
 ;	movwf	TBLPTRU, A		; load upper bits to TBLPTRU
@@ -85,7 +85,7 @@ setup:	bcf	CFGS	; point to Flash program memory
 ;	    bra     loop_until_J_1
 	; ******* End original Main programme ****************************************
 
-	; ******* New Main programme - Keypad to LCD ****************************************
+	; ******* New Main programme ****************************************
 start:
 wait_for_keypad:
 	call	KeyPad_read	; scan keypad, ASCII in W (0 if none)
