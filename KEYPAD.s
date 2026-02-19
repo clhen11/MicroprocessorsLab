@@ -21,11 +21,14 @@ KeyPad_Setup:
 KeyPad_init:
     movlw   0x0F	; 0-3 input, 4-7 outputs
     movwf   TRISE, A
+    movlw   0xF0
+    movwf    PORTE, A
     movlw   0x0
     movwf   TRISD, A
     clrf    PORTD
     movlb   0x02
     bsf	    REPU
+    
     
     clrf    LATE
     
@@ -36,7 +39,7 @@ KeyPad_init:
     return
     
 KeyPad_read:
-    btfsc   PORTE, 0
+    btfss   PORTE, 0
     bra	    PORTD_output_0
     btfsc   PORTE, 1
     bra	    PORTD_output_1
