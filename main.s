@@ -28,8 +28,8 @@ rst: 	org 0x0
 setup:	bcf	CFGS	; point to Flash program memory  
 	bsf	EEPGD 	; access Flash program memory
 	call	UART_Setup	; setup UART
-	call	LCD_Setup	; setup UART
 	call	KeyPad_init	; set up keypad
+	call	LCD_Setup	; setup LCD
 	bsf TRISJ, 0, A		; set RJ0 to input
 	
 	goto	start
@@ -87,6 +87,12 @@ setup:	bcf	CFGS	; point to Flash program memory
 
 	; ******* New Main programme ****************************************
 start:
+    ; Set LCD cursor to line 1, position 0 FIRST
+    movlw   0x80            ; line 1, position 0 (0x80 = DDRAM address 0x00)
+    call    LCD_Send_Byte_I ; send as instruction
+    movlw   10
+    call    LCD_delay_x4us  ; wait for LCD to process
+    
 wait_for_keypad:
 	call	KeyPad_read	; scan keypad, ASCII in W (0 if none)
 	bz	wait_for_keypad	; no key pressed, keep scanning

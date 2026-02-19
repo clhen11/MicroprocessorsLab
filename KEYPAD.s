@@ -97,14 +97,15 @@ KeyPad_init:
     movwf   LATE, A
     movlw   0x0
     movwf   TRISD, A	; PORTD all outputs (for display)
-    clrf    PORTD
-    movlb   0x02
+    clrf    PORTD, A
+    movlb   0x02    ; set bsr
     bsf	    REPU	; enable pull-ups on PORTE
-    clrf    LATE
+    movlb   0x00    ;restore bsr
     movlw   0xF0
     movwf   LATE, A	; restore columns high
     movf    PORTE, W
     return
+
 
 KeyPad_read:
     ; 4x4 keypad scan on PORTE: RE0-RE3 rows (inputs), RE4-RE7 columns (outputs)
