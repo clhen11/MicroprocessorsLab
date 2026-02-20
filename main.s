@@ -15,7 +15,7 @@ myArray:    ds 0x80 ; reserve 128 bytes for message data
 psect	data    
 	; ******* myTable, data in programme memory, and its length *****
 myTable:
-	db  '1','2','3','4','5','6','7','8','9','0','1','2','3','4','5','6','7','8','9','0',0x0a
+	db  '5','2','3','4','5','6','7','8','9','0','1','2','3','4','5','6','7','8','9','0',0x0a
 					; message, plus carriage return
 	myTable_l   EQU	22	; length of data
 	align	2
@@ -30,6 +30,7 @@ setup:	bcf	CFGS	; point to Flash program memory
 	call	UART_Setup	; setup UART
 	call	KeyPad_init	; set up keypad
 	call	LCD_Setup	; setup LCD
+	call	LCD_Clear	; clear LCD display
 	bsf TRISJ, 0, A		; set RJ0 to input
 	
 	goto	start
@@ -40,6 +41,9 @@ start:
     call    LCD_Send_Byte_I ; send as instruction
     movlw   10
     call    LCD_delay_x4us  ; wait for LCD to process
+    
+    movlw 'X'
+    call LCD_Send_Byte_D
     
 wait_for_keypad:
 	call	KeyPad_read	; scan keypad, ASCII in W (0 if none)
