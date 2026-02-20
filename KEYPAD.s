@@ -3,7 +3,9 @@
 global  KeyPad_init, KeyPad_read
 
 psect	udata_acs   ; reserve data space in access ram
-KeyPad_counter: ds    1	    ; reserve 1 byte for variable KeyPad_counter
+KeyPad_counter: ds  1	    ; reserve 1 byte for variable KeyPad_counter
+rows:		ds  1
+columns:	ds  1
 
 psect	KeyPad_code,class=CODE
 KeyPad_Setup:
@@ -38,33 +40,130 @@ KeyPad_init:
     
     return
     
-KeyPad_read:
-    btfss   PORTE, 0
-    bra	    PORTD_output_0
-    btfsc   PORTE, 1
-    bra	    PORTD_output_1
-    btfsc   PORTE, 2
-    bra	    PORTD_output_2
-    btfsc   PORTE, 3
-    bra	    PORTD_output_3
-    nop
+KeyPad_read_col:
+    clrf LATE
     
-PORTD_output_0:
-    clrf    PORTD
-    bsf	    PORTD, 0
-    return
-PORTD_output_1:
-    clrf    PORTD
-    bsf	    PORTD, 1
-    return
-PORTD_output_2:
-    clrf    PORTD
-    bsf	    PORTD, 2
-    return
-PORTD_output_3:
-    clrf    PORTD
-    bsf	    PORTD, 3
-    return
+    movwf   0x0F
+    movf    TRISE   ;set pins 0-3 to output
+    
+    call    KeyPad_delay
+    
+    movf    PORTE, W, A
+    movwf   rows, A
+    
+KeyPad_decode:
+    movf    columns, W, A
+    xorwf   rows, W, A
+    movwf   keys, A
+    movwf   PORTD, A
+    
+test_no_key: 
+    movlw   0xFF
+    cpfseq  keys
+    bra	    test_key_0
+    retlw   0x00
+   
+test_key_0:
+    movlw   0xBE
+    cpfseq  keys, A
+    bra	    test_key_1
+    retlw
+    
+test_key_1:
+    movlw   0x77
+    cpfseq  keys, A
+    bra	    test_key_2
+    retlw
+
+test_key_2:
+    movlw   0xB7
+    cpfseq  keys, A
+    bra	    test_key_3
+    retlw
+
+    
+test_key_3: 
+    movlw   0xD7
+    cpfseq  keys
+    bra	    test_key_4
+    retlw   
+   
+test_key_4:
+    movlw   0x7B
+    cpfseq  keys, A
+    bra	    test_key_5
+    retlw
+    
+test_key_5:
+    movlw   0xBB
+    cpfseq  keys, A
+    bra	    test_key_6
+    retlw
+
+test_key_6:
+    movlw   0xDB
+    cpfseq  keys, A
+    bra	    test_key_7
+    retlw
+
+test_key_7: 
+    movlw   0x7D
+    cpfseq  keys
+    bra	    test_key_8
+    retlw   
+   
+test_key_8:
+    movlw   0xBD
+    cpfseq  keys, A
+    bra	    test_key_9
+    retlw
+    
+test_key_9:
+    movlw   0xDD
+    cpfseq  keys, A
+    bra	    test_key_A
+    retlw
+
+test_key_A:
+    movlw   0x7E
+    cpfseq  keys, A
+    bra	    test_key_B
+    retlw
+
+test_key_B: 
+    movlw   0xDE
+    cpfseq  keys
+    bra	    test_key_C
+    retlw   
+   
+test_key_C:
+    movlw   0xEE
+    cpfseq  keys, A
+    bra	    test_key_D
+    retlw
+    
+test_key_D:
+    movlw   0xED
+    cpfseq  keys, A
+    bra	    test_key_E
+    retlw
+
+test_key_E:
+    movlw   0xEB
+    cpfseq  keys, A
+    bra	    test_key_F
+    retlw
+
+test_key_F:
+    movlw   0xE7
+    cpfseq  keys, A
+    bra	    test_key_F
+    retlw
+
+
+    
+    
+
     
 
 
@@ -83,5 +182,13 @@ KeyPad_Transmit_Byte:	    ; Transmits byte stored in W
     bra	    KeyPad_Transmit_Byte
     movwf   TXREG1, A
     return
+    
+    
+KeyPad_delay:			; delay routine	4 instruction loop == 250ns	    
+	movlw 	0x00		; W=0
+lcdlp1:	decf 	LCD_cnt_l, F, A	; no carry when 0x00 -> 0xff
+	subwfb 	LCD_cnt_h, F, A	; no carry when 0x00 -> 0xff
+	bc 	lcdlp1		; carry, then loop again
+	return			; carry reset so return
 
 
