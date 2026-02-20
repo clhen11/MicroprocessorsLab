@@ -22,6 +22,7 @@
       <itemPath>UART.s</itemPath>
       <itemPath>main.s</itemPath>
       <itemPath>config.s</itemPath>
+      <itemPath>multiply.s</itemPath>
     </logicalFolder>
   </logicalFolder>
   <projectmakefile>Makefile</projectmakefile>
