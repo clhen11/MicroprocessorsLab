@@ -8,6 +8,12 @@ DAC_Int_Hi:
 	btfss	TMR0IF		; check that this is timer0 interrupt
 	retfie	f		; if not then return
 	incf	LATJ, F, A	; increment PORTD
+
+;	movlw   0xF0
+;	movwf   TMR0H
+;	movlw   0xBE
+;	movwf   TMR0L
+	
 	bcf	TMR0IF		; clear interrupt flag
 	retfie	f		; fast return from interrupt
 
@@ -17,6 +23,7 @@ DAC_Setup:
 	movlw	10000111B	; Set timer0 to 16-bit, Fosc/4/256
 	movwf	T0CON, A	; = 62.5KHz clock rate, approx 1sec rollover
 	bsf	TMR0IE		; Enable timer0 interrupt
+;	bcf TMR0IF
 	bsf	GIE		; Enable all interrupts
 	return
 	
