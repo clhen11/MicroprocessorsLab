@@ -3,6 +3,8 @@
 global	Mul_16x16   
 global ARG1L, ARG1H, ARG2L, ARG2H
 global RES0, RES1, RES2, RES3
+global  ARG8, ARG24L, ARG24U, ARG24H
+global  RES32_0, RES32_1, RES32_2, RES32_3
 
 psect   udata_acs
 ; Inputs (16-bit): ARG1H:ARG1L, ARG2H:ARG2L
@@ -32,7 +34,8 @@ RES32_2:    ds 1
 RES32_3:    ds 1   ; most significant byte
     
 psect	mul_code, class=CODE
-    
+
+org 0x0
 goto all_tests  
 
 Mul_16x16:   
@@ -67,7 +70,30 @@ Mul_16x16:
     return
     
 mul_8x24:
-    movf    ARG8, W
+    
+    MOVF    ARG8, W
+    MULWF   ARG24L
+    MOVFF   PRODL, RES32_0
+    MOVFF   PRODH, RES32_1
+
+    MOVF    ARG8, W
+    MULWF   ARG24U
+    MOVF    PRODL, W
+    ADDWF   RES32_1, F
+
+    MOVF    PRODH, W
+    ADDWFC  RES32_2, F
+    CLRF    WREG
+    ADDWFC  RES32_3, F
+
+    MOVF    ARG8, W
+    MULWF   ARG24H
+    MOVF    PRODL, W
+    ADDWF   RES32_2, F
+    MOVF    PRODH, W
+    ADDWFC  RES32_3, F
+
+    return
     
     
     
@@ -103,16 +129,7 @@ test_mul_8x24:
     
     call    mul_8x24
     
-    
-    ARG8
-    ARG24L
-    ARG24U
-    ARG24H
-    RES32_0
-    RES32_1
-    RES32_2
-    RES32_3
-    
+goto    0x0
 
 
 end
