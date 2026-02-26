@@ -28,7 +28,7 @@ main:
 ;	end	main
 
     
-    start:
+start:
     ; PORTC = outputs (DAC data)
     movlw   0x00
     movwf   TRISC, A
