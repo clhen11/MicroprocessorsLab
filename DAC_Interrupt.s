@@ -42,6 +42,8 @@ DAC_Int_Hi:
 	btfss	TMR0IF		; check that this is timer0 interrupt
 	retfie	f		; if not then return
 	; incf	LATJ, F, A	; increment PORTD
+	movlw	217
+	movwf	TMR0L, A
 	
 	; Set TBLPTR = sine_table + sine_index
 	movlw	low highword(sine_table)
@@ -57,7 +59,9 @@ DAC_Int_Hi:
 	tblrd*			; read sine value from program memory
 	movff	TABLAT, LATJ	; output to DAC on PORTJ
 	
-	incf	sine_index, F, A ; next sample (wraps 0->255 automatically)
+	MOVLW	4
+	addwf	sine_index, F, A
+;	incf	sine_index, F, A ; next sample (wraps 0->255 automatically)
 	
 	bcf	TMR0IF		; clear interrupt flag
 	retfie	f		; fast return from interrupt
