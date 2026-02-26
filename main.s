@@ -3,9 +3,11 @@
 ;;
 ;; Workflow:
 ;;   1. Setup ADC and UART
-;;   2. Collect 256 x 10-bit ADC samples at 10 kHz using Timer0 polling
-;;   3. Send all samples over UART (start marker 0xFF,0xFF then 512 bytes)
+;;   2. Collect 128 x 10-bit ADC samples at 10 kHz using Timer0 polling
+;;   3. Send all samples over UART (start marker 0xFF,0xFF then 256 bytes)
 ;;   4. Halt (or loop to repeat)
+;;
+;; 128 samples at 10 kHz = 12.8 ms capture window (~12.8 cycles of 1 kHz)
     
 #include <xc.inc>
 
@@ -19,14 +21,14 @@ extrn	ADC_Setup, ADC_Read		; external ADC subroutines
 TMR0_PRELOAD_H	EQU 0xF9
 TMR0_PRELOAD_L	EQU 0xC0
 
-psect	udata_acs   ; variables in access RAM
-sample_cntL:	ds 1	; low byte of sample counter
-sample_cntH:	ds 1	; high byte of sample counter
-send_cnt:	ds 1	; byte counter for UART send loop
-send_page:	ds 1	; page counter for UART send loop
+NUM_SAMPLES	EQU 128		; 128 samples x 2 bytes = 256 bytes (fits in 1 bank)
 
-psect	udata_bank4 ; 512-byte buffer at bank 4 (0x400)
-adc_buffer:	ds 512	; 256 samples x 2 bytes (low, high)
+psect	udata_acs   ; variables in access RAM
+sample_cnt:	ds 1	; sample counter (0-127)
+send_cnt:	ds 1	; byte counter for UART send loop
+
+psect	udata_bank4 ; 256-byte buffer in bank 4 (0x400)
+adc_buffer:	ds 256	; 128 samples x 2 bytes (low, high)
 
 psect	code, abs
 rst:	org 0x0
@@ -50,10 +52,9 @@ start:
 
 	; ---- Initialise buffer pointer and counter ----
 	lfsr	0, adc_buffer
-	clrf	sample_cntL, A
-	clrf	sample_cntH, A
+	clrf	sample_cnt, A
 
-	; ---- Sample loop: collect 256 ADC readings ----
+	; ---- Sample loop: collect 128 ADC readings ----
 sample_loop:
 	; Preload Timer0
 	movlw	TMR0_PRELOAD_H
@@ -76,35 +77,32 @@ wait_tmr:
 	bra	wait_tmr
 	bcf	TMR0ON		; stop timer
 
-	; Increment 16-bit sample counter
-	infsnz	sample_cntL, F, A
-	incf	sample_cntH, F, A
-
-	; Check if 256 samples collected (sample_cntH == 1)
-	movlw	0x01
-	cpfseq	sample_cntH, A
+	; Increment sample counter, check if done
+	incf	sample_cnt, F, A
+	movlw	NUM_SAMPLES
+	cpfseq	sample_cnt, A
 	bra	sample_loop	; not yet ? keep sampling
 
 	; ---- Send data over UART ----
-	; Start marker: 0xFF, 0xFF (cannot appear in 10-bit ADC data)
+	; Preamble: 0xAA, 0x55, 0xFF, 0xFF
+	; 0xAA 0x55 breaks any false match from idle-line 0xFF bytes
+	movlw	0xAA
+	call	UART_Transmit_Byte
+	movlw	0x55
+	call	UART_Transmit_Byte
 	movlw	0xFF
 	call	UART_Transmit_Byte
 	movlw	0xFF
 	call	UART_Transmit_Byte
 
-	; Send 512 bytes (2 pages of 256 bytes each)
+	; Send 256 bytes (128 samples x 2 bytes)
 	lfsr	0, adc_buffer
-	movlw	2
-	movwf	send_page, A
-send_outer:
 	clrf	send_cnt, A	; 0 -> decfsz loops 256 times
-send_inner:
+send_loop:
 	movf	POSTINC0, W, A
 	call	UART_Transmit_Byte
 	decfsz	send_cnt, F, A
-	bra	send_inner
-	decfsz	send_page, F, A
-	bra	send_outer
+	bra	send_loop
 
 	; End marker: 0xFE, 0xFE
 	movlw	0xFE
