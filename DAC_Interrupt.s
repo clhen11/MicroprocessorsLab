@@ -1,34 +1,3 @@
-;#include <xc.inc>
-;	
-;global	DAC_Setup, DAC_Int_Hi
-;    
-;psect	dac_code, class=CODE
-;	
-;DAC_Int_Hi:	
-;	btfss	TMR0IF		; check that this is timer0 interrupt
-;	retfie	f		; if not then return
-;	incf	LATJ, F, A	; increment PORTD
-;
-;;	movlw   0xF0
-;;	movwf   TMR0H
-;;	movlw   0xBE
-;;	movwf   TMR0L
-;	
-;	bcf	TMR0IF		; clear interrupt flag
-;	retfie	f		; fast return from interrupt
-;
-;DAC_Setup:
-;	clrf	TRISJ, A	; Set PORTD as all outputs
-;	clrf	LATJ, A		; Clear PORTD outputs
-;	movlw	10000111B	; Set timer0 to 16-bit, Fosc/4/256
-;	movwf	T0CON, A	; = 62.5KHz clock rate, approx 1sec rollover
-;	bsf	TMR0IE		; Enable timer0 interrupt
-;;	bcf TMR0IF
-;	bsf	GIE		; Enable all interrupts
-;	return
-;	
-;	end
-    
 #include <xc.inc>
 	
 global	DAC_Setup, DAC_Int_Hi
@@ -43,7 +12,7 @@ DAC_Int_Hi:
 	retfie	f		; if not then return
 	; incf	LATJ, F, A	; increment PORTD
 	movlw	217
-	movwf	TMR0L, A
+	movwf	TMR0L, A    ;Preload TMR0L with 217 so counts 256-217=39 ticks
 	
 	; Set TBLPTR = sine_table + sine_index
 	movlw	low highword(sine_table)
@@ -59,8 +28,8 @@ DAC_Int_Hi:
 	tblrd*			; read sine value from program memory
 	movff	TABLAT, LATJ	; output to DAC on PORTJ
 	
-	MOVLW	4
-	addwf	sine_index, F, A
+	MOVLW	4   
+	addwf	sine_index, F, A    ;skip 4 samples of sine_index per interrupt 
 ;	incf	sine_index, F, A ; next sample (wraps 0->255 automatically)
 	
 	bcf	TMR0IF		; clear interrupt flag
